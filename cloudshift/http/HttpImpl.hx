@@ -65,7 +65,20 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
         url = req.url,
         match = false;
 
-        if (_routes != null) {
+		if( req.method == "OPTIONS" ) {
+		  var ac_headers = Reflect.field( req.headers, "access-control-request-headers" );
+		  if( ac_headers == null ) {
+			ac_headers = "*";
+		  }
+		  resp.writeHead( 200,
+						  "",
+						  { "access-control-allow-origin": "*",
+							  "access-control-allow-methods": "POST, GET",
+							  "access-control-allow-headers": ac_headers } );
+		  resp.end();
+		  match = true;
+		}
+		else if (_routes != null) {
           for (r in _routes) {
             if (r.re.match(url)) {
               match = true;
@@ -81,12 +94,12 @@ class HttpImpl implements HttpServer,implements Part<HostPort,String,HttpServer,
         }
         
         if (!match && _root != null) {
-            if (req.method == "GET") {
-                if (url == "/") url = _index;
-                _getHandler(url,req,resp,200);
-            }
+		  if (req.method == "GET") {
+			if (url == "/") url = _index;
+			_getHandler(url,req,resp,200);
+		  }
         }
-    });
+	  });
 
     Core.log(I("Starting "+_serverName+" on "+d.host+":"+d.port));
 
